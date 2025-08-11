@@ -1,0 +1,9 @@
+{
+  "name": "telegram-tasks",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.6.8",
+    "firebase-admin": "^11.10.1"
+  }
+}
