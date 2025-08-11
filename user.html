@@ -70,7 +70,6 @@
     if (tg) {
       tg.ready();
       const user = tg.initDataUnsafe?.user;
-
       if (user) {
         userId = user.id;
         document.getElementById("userInfo").textContent =
@@ -113,8 +112,8 @@
         `<li class="loading" style="color: red;">❌ Erreur de chargement : ${error.message}</li>`;
     });
 
-    // Fonction validation
-    function valider(taskId, reward, event) {
+    // Fonction validation avec URL complète de l'API
+    async function valider(taskId, reward, event) {
       if (!userId) {
         alert("❌ Utilisateur non chargé. Ouvre la page dans Telegram.");
         return;
@@ -124,25 +123,28 @@
       button.disabled = true;
       button.textContent = "⏳...";
 
-      fetch(`/api/verifyTask?userId=${userId}&taskId=${taskId}&reward=${reward}&initData=${encodeURIComponent(tg.initData)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("✅ Tâche validée ! " + (data.message || "Récompense ajoutée."));
-            button.textContent = "✅ Validé";
-            button.style.backgroundColor = "#6b7280";
-          } else {
-            alert("❌ " + (data.message || "Échec de validation."));
-            button.disabled = false;
-            button.textContent = "✅ Valider";
-          }
-        })
-        .catch(err => {
-          console.error("Erreur API:", err);
-          alert("❌ Erreur de connexion au serveur.");
+      try {
+        const API_URL = "https://TON-DOMAINE.com/api/verifyTask"; // <- Mets ici l'URL exacte de ton API
+
+        const res = await fetch(`${API_URL}?userId=${userId}&taskId=${taskId}&reward=${reward}&initData=${encodeURIComponent(tg.initData)}`);
+        const data = await res.json();
+
+        if (data.success) {
+          alert("✅ Tâche validée !");
+          button.textContent = "✅ Validé";
+          button.style.backgroundColor = "#6b7280";
+        } else {
+          alert("❌ " + (data.message || "Échec de validation"));
           button.disabled = false;
           button.textContent = "✅ Valider";
-        });
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert("⚠️ Erreur de connexion au serveur");
+        button.disabled = false;
+        button.textContent = "✅ Valider";
+      }
     }
 
     // Animation Telegram
