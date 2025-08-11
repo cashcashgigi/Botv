@@ -1,19 +1,141 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Utilisateur - Tâches</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎯 Tâches - Récompenses</title>
+
+  <!-- Style moderne -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f6f9;
+      color: #2c3e50;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    header {
+      background: #3b82f6;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+
+    .user-info {
+      background: #e3f2fd;
+      padding: 10px 20px;
+      color: #1e40af;
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    #taskList {
+      list-style: none;
+      padding: 10px;
+    }
+
+    #taskList li {
+      background: #f9f9f9;
+      margin: 12px 0;
+      padding: 16px;
+      border-radius: 8px;
+      border-left: 4px solid #3b82f6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 1rem;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+      transition: transform 0.2s ease;
+    }
+
+    #taskList li:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #taskList a {
+      color: #3b82f6;
+      text-decoration: none;
+      margin-right: 10px;
+      font-weight: 500;
+    }
+
+    #taskList a:hover {
+      text-decoration: underline;
+    }
+
+    button {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: #0d9488;
+    }
+
+    button:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+      font-style: italic;
+    }
+  </style>
 </head>
 <body>
-  <h1>🎯 Tâches disponibles</h1>
-  <ul id="taskList"></ul>
 
-  <!-- Firebase -->
+  <div class="container">
+    <header>
+      <h1>🎯 Vos Tâches à accomplir</h1>
+    </header>
+
+    <div class="user-info" id="userInfo">
+      Chargement utilisateur...
+    </div>
+
+    <ul id="taskList">
+      <li class="loading">Chargement des tâches...</li>
+    </ul>
+  </div>
+
+  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <script>
+    // Initialisation de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDY4HHyrghswpcgfyMyMA9OWDbWJeWyKMg",
       authDomain: "xbetru-f3506.firebaseapp.com",
@@ -28,36 +150,95 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const userId = prompt("Entrez votre ID Telegram :");
+    // Récupérer l'utilisateur Telegram
+    let userId = null;
+
+    if (window.Telegram && Telegram.WebApp) {
+      Telegram.WebApp.ready(); // Indique que l'interface est prête
+      const user = Telegram.WebApp.initDataUnsafe?.user;
+
+      if (user) {
+        userId = user.id;
+        document.getElementById("userInfo").textContent = 
+          `Utilisateur : ${user.first_name} ${user.last_name || ''} (${userId})`;
+      } else {
+        document.getElementById("userInfo").innerHTML = 
+          `<span style="color: red;">❌ Impossible de charger l'utilisateur. Ouvre cette page via Telegram.</span>`;
+      }
+    } else {
+      document.getElementById("userInfo").innerHTML = 
+        `<span style="color: red;">❌ Cette page doit être ouverte dans Telegram.</span>`;
+    }
 
     // Afficher les tâches
     db.collection("tasks").onSnapshot(snapshot => {
       const taskList = document.getElementById("taskList");
       taskList.innerHTML = "";
+
+      if (snapshot.empty) {
+        taskList.innerHTML = "<li class='loading'>Aucune tâche disponible pour le moment.</li>";
+        return;
+      }
+
       snapshot.forEach(doc => {
         const task = doc.data();
         const li = document.createElement("li");
         li.innerHTML = `
-          ${task.title} (${task.reward} points)
-          <a href="${task.url}" target="_blank">Faire la tâche</a>
-          <button onclick="valider('${doc.id}', ${task.reward})">Valider</button>
+          <div>
+            <strong>${task.title}</strong> 
+            <span style="color: #10b981; font-weight: bold;">+${task.reward} points</span>
+            <br>
+            <a href="${task.url}" target="_blank" onclick="trackLink()">🔗 Visiter le lien</a>
+          </div>
+          <button onclick="valider('${doc.id}', ${task.reward})">✅ Valider</button>
         `;
         taskList.appendChild(li);
       });
+    }, error => {
+      document.getElementById("taskList").innerHTML = 
+        `<li class="loading" style="color: red;">❌ Erreur de chargement : ${error.message}</li>`;
     });
 
-    // Valider la tâche
+    // Fonction de validation de tâche
     function valider(taskId, reward) {
+      if (!userId) {
+        alert("❌ Utilisateur non chargé. Ouvre la page dans Telegram.");
+        return;
+      }
+
+      const button = event.target;
+      button.disabled = true;
+      button.textContent = "⏳...";
+
       fetch(`/api/verifyTask?userId=${userId}&taskId=${taskId}&reward=${reward}`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            alert("✅ Tâche validée et récompense ajoutée !");
+            alert("✅ Tâche validée ! " + (data.message || "Récompense ajoutée."));
+            button.textContent = "✅ Validé";
+            button.style.backgroundColor = "#6b7280";
+            button.disabled = true;
           } else {
-            alert("❌ Vous devez d'abord rejoindre le canal !");
+            alert("❌ " + (data.message || "Échec de validation. Assurez-vous d'avoir rejoint le canal."));
+            button.disabled = false;
+            button.textContent = "✅ Valider";
           }
+        })
+        .catch(err => {
+          console.error("Erreur API:", err);
+          alert("❌ Erreur de connexion au serveur.");
+          button.disabled = false;
+          button.textContent = "✅ Valider";
         });
     }
+
+    // Optionnel : tracker les clics sur les liens
+    function trackLink() {
+      if (Telegram.WebApp) {
+        Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+      }
+    }
   </script>
+
 </body>
-</html>
+  </html>
