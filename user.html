@@ -168,6 +168,12 @@
     } else {
       document.getElementById("userInfo").innerHTML = 
         `<span style="color: red;">❌ Cette page doit être ouverte dans Telegram.</span>`;
+      
+      // Redirection si la page n'est pas ouverte dans Telegram
+      if (!navigator.userAgent.includes('Telegram')) {
+        alert("Cette page doit être ouverte via un bot Telegram.");
+        window.location.href = "https://t.me/ton_bot?start=commande"; // Remplace par ton bot
+      }
     }
 
     // Afficher les tâches
@@ -241,4 +247,4 @@
   </script>
 
 </body>
-  </html>
+</html>
