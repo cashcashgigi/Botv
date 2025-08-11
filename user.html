@@ -154,16 +154,24 @@
     let userId = null;
 
     if (window.Telegram && Telegram.WebApp) {
-      Telegram.WebApp.ready(); // Indique que l'interface est prête
-      const user = Telegram.WebApp.initDataUnsafe?.user;
+      console.log("Telegram.WebApp est disponible"); // Pour débugger
 
-      if (user) {
-        userId = user.id;
-        document.getElementById("userInfo").textContent = 
-          `Utilisateur : ${user.first_name} ${user.last_name || ''} (${userId})`;
-      } else {
+      try {
+        Telegram.WebApp.ready(); // Indique que l'interface est prête
+        const user = Telegram.WebApp.initDataUnsafe?.user;
+
+        if (user) {
+          userId = user.id;
+          document.getElementById("userInfo").textContent = 
+            `Utilisateur : ${user.first_name} ${user.last_name || ''} (${userId})`;
+        } else {
+          document.getElementById("userInfo").innerHTML = 
+            `<span style="color: red;">❌ Impossible de charger l'utilisateur. Ouvre cette page via Telegram.</span>`;
+        }
+      } catch (error) {
+        console.error("Erreur lors de l'initialisation de Telegram.WebApp:", error);
         document.getElementById("userInfo").innerHTML = 
-          `<span style="color: red;">❌ Impossible de charger l'utilisateur. Ouvre cette page via Telegram.</span>`;
+          `<span style="color: red;">❌ Erreur lors de l'initialisation de Telegram.WebApp.</span>`;
       }
     } else {
       document.getElementById("userInfo").innerHTML = 
