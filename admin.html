@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Gestion des tâches</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <h1>📋 Administration des tâches</h1>
+
+  <h2>Ajouter une tâche</h2>
+  <input type="text" id="taskTitle" placeholder="Titre de la tâche">
+  <input type="text" id="taskUrl" placeholder="Lien (ex: https://t.me/channel)">
+  <input type="number" id="taskReward" placeholder="Récompense (points)">
+  <button id="addTaskBtn">Ajouter</button>
+
+  <h2>📌 Tâches existantes</h2>
+  <ul id="taskList"></ul>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDY4HHyrghswpcgfyMyMA9OWDbWJeWyKMg",
+      authDomain: "xbetru-f3506.firebaseapp.com",
+      databaseURL: "https://xbetru-f3506-default-rtdb.firebaseio.com",
+      projectId: "xbetru-f3506",
+      storageBucket: "xbetru-f3506.firebasestorage.app",
+      messagingSenderId: "589096414662",
+      appId: "1:589096414662:web:d8f1e1e3b5bb18de3b96c7",
+      measurementId: "G-74XYP10RNY"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Ajouter une tâche
+    document.getElementById("addTaskBtn").addEventListener("click", () => {
+      const title = document.getElementById("taskTitle").value;
+      const url = document.getElementById("taskUrl").value;
+      const reward = document.getElementById("taskReward").value;
+
+      if (title && url && reward) {
+        db.collection("tasks").add({
+          title: title,
+          url: url,
+          reward: parseInt(reward)
+        }).then(() => {
+          alert("✅ Tâche ajoutée !");
+          document.getElementById("taskTitle").value = "";
+          document.getElementById("taskUrl").value = "";
+          document.getElementById("taskReward").value = "";
+        });
+      } else {
+        alert("❌ Veuillez remplir tous les champs");
+      }
+    });
+
+    // Afficher les tâches
+    db.collection("tasks").onSnapshot(snapshot => {
+      const taskList = document.getElementById("taskList");
+      taskList.innerHTML = "";
+      snapshot.forEach(doc => {
+        const task = doc.data();
+        const li = document.createElement("li");
+        li.textContent = `${task.title} (${task.reward} points) → ${task.url}`;
+        taskList.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>
